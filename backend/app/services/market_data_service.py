@@ -1,7 +1,6 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import ccxt
 import requests
 import feedparser
 from datetime import datetime
@@ -13,8 +12,8 @@ class MarketDataService:
     Conecta con Yahoo Finance, Binance y fuentes On-Chain.
     """
 
-    def __init__(self):
-        self.binance = ccxt.binance()
+   ### def __init__(self):
+      ###  self.binance = ccxt.binance()
 
     def get_ohlcv(self, ticker="BTC-USD", period="2y", interval="1d"):
         """Descarga y procesa datos históricos con métricas técnicas."""
