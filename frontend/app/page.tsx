@@ -121,4 +121,4 @@ export default function TerminalPage() {
       </div>
     </main>
   );
-}
+} 

@@ -48,3 +48,5 @@ export async function getMacroTicker() {
     return [];
   }
 }
+// Debe usar la variable dinámica, NO el texto duro de localhost
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
