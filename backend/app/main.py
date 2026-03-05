@@ -51,7 +51,7 @@ async def get_institutional_radar():
 @app.get("/api/v1/risk")
 def get_risk_analysis(ticker: str = "BTC-USD"):
     try:
-        # Descargamos data limpia (3 meses es suficiente para sacar los últimos 30 días)
+        # Descargamos data (3 meses es perfecto para calcular 50 días de historia)
         df = yf.download(ticker, period="3mo", interval="1d")
         
         if df.empty:
@@ -60,27 +60,51 @@ def get_risk_analysis(ticker: str = "BTC-USD"):
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.droplevel(1)
 
-        # MATEMÁTICA INSTITUCIONAL: Realized Volatility (30 días)
-        # 1. Calculamos los retornos logarítmicos diarios
+        # 1. Cálculo de Volatilidad
         df['log_returns'] = np.log(df['Close'] / df['Close'].shift(1))
-        
-        # 2. Aislamos estrictamente los últimos 30 días operables
         recent_30d_returns = df['log_returns'].tail(30)
+        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365))
         
-        # 3. Calculamos la desviación estándar y la anualizamos (365 días para Cripto)
-        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365) )
+        # 2. Cálculo de Medias Móviles (Corto y Medio plazo)
+        df['sma_20'] = df['Close'].rolling(window=20).mean()
+        df['sma_50'] = df['Close'].rolling(window=50).mean()
         
-        # Medias móviles y precios
-        current_sma = float(df['Close'].rolling(window=20).mean().iloc[-1])
+        # Extracción de valores actuales
+        current_sma_20 = float(df['sma_20'].iloc[-1])
+        current_sma_50 = float(df['sma_50'].iloc[-1])
         current_price = float(df['Close'].iloc[-1])
+        
+        # --- VOLCANO RISK ENGINE: Scoring Multifactorial ---
+        risk_score = 0
+        
+        if realized_volatility > 0.60:
+            risk_score += 1
+            
+        if current_price < current_sma_20:
+            risk_score += 1
+            
+        if current_price < current_sma_50:
+            risk_score += 1
+            
+        # Asignación del régimen de mercado basado en el score
+        if risk_score == 0:
+            system_status = "NORMAL"
+        elif risk_score == 1:
+            system_status = "WATCH"
+        elif risk_score == 2:
+            system_status = "ELEVATED"
+        else:
+            system_status = "CRITICAL"
         
         return {
             "ticker": ticker,
             "volatility": realized_volatility, 
-            "sma_20": current_sma,
-            "price": current_price,         # Variable para el simulador
-            "current_price": current_price, # Variable por si otra tarjeta la usa
-            "status": "ELEVATED" if realized_volatility > 0.60 else "NORMAL"
+            "sma_20": current_sma_20,
+            "sma_50": current_sma_50,
+            "price": current_price,         
+            "current_price": current_price, 
+            "status": system_status,
+            "risk_score": risk_score # Lo enviamos por si quieres pintar una barra de peligro en el futuro
         }
         
     except Exception as e:
