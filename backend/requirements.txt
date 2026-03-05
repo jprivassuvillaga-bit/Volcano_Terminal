@@ -3,7 +3,7 @@ uvicorn
 pandas
 numpy
 yfinance
-ccxt >=4.4.0
+ccxt >=4.2.14
 requests
 feedparser
 scipy
