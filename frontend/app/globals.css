@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+/* INSTITUTIONAL THEME CONFIGURATION (Tailwind v4)
+  Definimos los colores base para mantener la consistencia en toda la terminal.
+*/
+@theme {
+  --color-background: #09090b;
+  --color-card: #0f0f11;
+  --color-accent: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* BASE STYLES
+  Garantizamos un fondo negro profundo y tipografía nítida.
+*/
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* TICKER ANIMATION ENGINE
+  Este es el motor que permite el desplazamiento infinito y suave.
+*/
+@keyframes ticker-scroll-logic {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Desplazamos exactamente el 50% porque tenemos el set de datos duplicado */
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-container {
+  display: flex;
+  width: max-content;
+  will-change: transform; /* Optimización de GPU para suavidad total */
+  animation: ticker-scroll-logic 45s linear infinite;
+}
+
+.ticker-container:hover {
+  animation-play-state: paused;
+}
+
+.ticker-container:hover {
+  animation-play-state: paused;
+}
+
+/* SCROLLBAR CUSTOMIZATION
+  Un dashboard profesional no puede tener el scrollbar gris por defecto de Windows/Mac.
+*/
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* UTILITIES PARA EL SIMULADOR Y EL RADAR
+*/
+.glass-panel {
+  background: rgba(15, 15, 17, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Efecto de parpadeo suave para alertas críticas */
+.animate-alert-pulse {
+  animation: alert-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+/* --- REACT GRID LAYOUT STYLES --- */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+}
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+.react-grid-item.resizing {
+  z-index: 1;
+  will-change: width, height;
+}
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+  opacity: 0.9;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+}
+.react-grid-item.react-grid-placeholder {
+  background: rgba(16, 185, 129, 0.1); /* Emerald placeholder */
+  border: 1px dashed rgba(16, 185, 129, 0.5);
+  transition-duration: 100ms;
+  z-index: 2;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  border-radius: 0.75rem;
+}
+/* El "Handle" para cambiar de tamaño en la esquina inferior derecha */
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+}
+.react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid rgba(255,255,255,0.2);
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+/* Ocultar scrollbars pero mantener funcionalidad en el dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* Forzar que los items de la grilla y sus hijos ocupen el 100% */
+.react-grid-item > div {
+  height: 100%;
+}
+
+.react-grid-placeholder {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-radius: 12px !important;
+}

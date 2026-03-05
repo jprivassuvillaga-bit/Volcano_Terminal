@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+numpy
+yfinance
+ccxt
+requests
+feedparser
+scipy
+statsmodels
+python-multipart
