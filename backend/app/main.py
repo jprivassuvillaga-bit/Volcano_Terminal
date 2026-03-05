@@ -68,7 +68,7 @@ def get_risk_analysis(ticker: str = "BTC-USD"):
         recent_30d_returns = df['log_returns'].tail(30)
         
         # 3. Calculamos la desviación estándar y la anualizamos (365 días para Cripto)
-        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365) * 100)
+        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365) )
         
         # Medias móviles y precios
         current_sma = float(df['Close'].rolling(window=20).mean().iloc[-1])
@@ -80,7 +80,7 @@ def get_risk_analysis(ticker: str = "BTC-USD"):
             "sma_20": current_sma,
             "price": current_price,         # Variable para el simulador
             "current_price": current_price, # Variable por si otra tarjeta la usa
-            "status": "ELEVATED" if realized_volatility > 60 else "NORMAL"
+            "status": "ELEVATED" if realized_volatility > 0.60 else "NORMAL"
         }
         
     except Exception as e:
