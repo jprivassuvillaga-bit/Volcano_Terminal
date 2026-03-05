@@ -51,7 +51,7 @@ async def get_institutional_radar():
 @app.get("/api/v1/risk")
 def get_risk_analysis(ticker: str = "BTC-USD"):
     try:
-        # 1. Descargamos la data cruda y segura de Yahoo
+        # Descargamos data limpia (3 meses es suficiente para sacar los últimos 30 días)
         df = yf.download(ticker, period="3mo", interval="1d")
         
         if df.empty:
@@ -60,34 +60,27 @@ def get_risk_analysis(ticker: str = "BTC-USD"):
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.droplevel(1)
 
-        # 2. LAS MATEMÁTICAS (Lo que faltaba)
-        # Calculamos los retornos diarios
-        df['returns'] = df['Close'].pct_change()
+        # MATEMÁTICA INSTITUCIONAL: Realized Volatility (30 días)
+        # 1. Calculamos los retornos logarítmicos diarios
+        df['log_returns'] = np.log(df['Close'] / df['Close'].shift(1))
         
-        # Calculamos la Volatilidad Histórica (Rolling de 20 días anualizado)
-        df['volatility'] = df['returns'].rolling(window=20).std() * np.sqrt(365) * 100
+        # 2. Aislamos estrictamente los últimos 30 días operables
+        recent_30d_returns = df['log_returns'].tail(30)
         
-        # Calculamos la Media Móvil de 20 días (SMA 20)
-        df['sma_20'] = df['Close'].rolling(window=20).mean()
+        # 3. Calculamos la desviación estándar y la anualizamos (365 días para Cripto)
+        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365) * 100)
         
-        # Limpiamos los primeros días que no tienen suficientes datos para el cálculo
-        df = df.dropna()
-
-        # 3. Extraemos el último valor de nuestras nuevas columnas
-        current_volatility = float(df['volatility'].iloc[-1])
-        current_sma = float(df['sma_20'].iloc[-1])
+        # Medias móviles y precios
+        current_sma = float(df['Close'].rolling(window=20).mean().iloc[-1])
         current_price = float(df['Close'].iloc[-1])
         
-        # Lógica de Riesgo
-        risk_status = "Alto Riesgo" if current_volatility > 60 else "Riesgo Moderado"
-        
-        # 4. Devolvemos el JSON exacto que tu frontend necesita
         return {
             "ticker": ticker,
-            "volatility": current_volatility, # El frontend estaba buscando esta llave exacta
+            "volatility": realized_volatility, 
             "sma_20": current_sma,
-            "current_price": current_price,
-            "status": risk_status
+            "price": current_price,         # Variable para el simulador
+            "current_price": current_price, # Variable por si otra tarjeta la usa
+            "status": "ELEVATED" if realized_volatility > 60 else "NORMAL"
         }
         
     except Exception as e:
