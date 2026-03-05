@@ -25,7 +25,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # En la primera prueba dejamos "*" para asegurar flujo, luego cerramos.
+    allow_origins=["*"],  # El asterisco es la llave maestra: permite que Vercel entre.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
