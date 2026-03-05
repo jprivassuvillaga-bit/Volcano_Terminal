@@ -3,10 +3,11 @@ uvicorn
 pandas
 numpy
 yfinance
-ccxt
+ccxt >=4.4.0
 requests
 feedparser
 scipy
 statsmodels
 python-multipart
 setuptools
+wheel
