@@ -50,7 +50,7 @@ export default function PriceStructureCard() {
       setIsLoading(true);
       try {
         // Mapeo simple para el backend de Python
-        const res = await fetch(`http://localhost:8000/api/v1/ohlcv?ticker=BTC-USD&period=${period}`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ohlcv?ticker=BTC-USD&period=${period}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0 && candleSeriesRef.current) {

@@ -15,39 +15,30 @@ class MarketDataService:
    ### def __init__(self):
       ###  self.binance = ccxt.binance()
 
-    def get_ohlcv(self, ticker="BTC-USD", period="2y", interval="1d"):
-        """Descarga y procesa datos históricos con métricas técnicas."""
+    def get_ohlcv(self, ticker: str, period: str = "1mo"):
         try:
-            t = yf.Ticker(ticker)
-            df = t.history(period=period, interval=interval)
+            # Aseguramos que el ticker tenga formato de Yahoo Finance (ej. BTC-USD)
+            yf_ticker = ticker.replace("/", "-") 
             
-            if df.empty: return pd.DataFrame()
-
-            df.columns = [c.lower() for c in df.columns]
-            if df.index.tz is not None:
-                df.index = df.index.tz_localize(None)
-
-            # --- Tus cálculos originales (El ADN de Volcano Bank) ---
-            df['sma_50'] = df['close'].rolling(window=50).mean()
-            df['sma_200'] = df['close'].rolling(window=200).mean()
+            # Extraemos la data
+            data = yf.Ticker(yf_ticker).history(period=period)
             
-            # Volatilidad Realizada
-            df['log_ret'] = np.log(df['close'] / df['close'].shift(1))
-            annual_factor = np.sqrt(365) if interval == "1d" else np.sqrt(365 * 24)
-            df['volatility'] = df['log_ret'].rolling(window=30).std() * annual_factor
-            
-            # Tu IV Proxy original
-            df['implied_vol_proxy'] = df['volatility'] * 1.1 + (df['volatility'] ** 2) * 2
-            
-            # Z-Score de 200 días
-            std_200 = df['close'].rolling(window=200).std()
-            df['z_score'] = (df['close'] - df['sma_200']) / std_200.replace(0, np.nan)
-            
-            return df.fillna(0)
+            # Formateamos para que el gráfico (Lightweight Charts) lo entienda
+            formatted_data = []
+            for index, row in data.iterrows():
+                formatted_data.append({
+                    "time": int(index.timestamp()), # o index.strftime('%Y-%m-%d') dependiendo de tu frontend
+                    "open": row["Open"],
+                    "high": row["High"],
+                    "low": row["Low"],
+                    "close": row["Close"],
+                    "value": row["Close"] # A veces necesario para line charts
+                })
+            return formatted_data
         except Exception as e:
-            print(f"Error en OHLCV: {e}")
-            return pd.DataFrame()
-
+            print(f"Error fetching OHLCV: {e}")
+            return []
+    
     def get_order_book(self, symbol='BTC/USDT'):
         """Extrae liquidez real del LOB de Binance."""
         try:
@@ -116,44 +107,25 @@ class MarketDataService:
 
     def get_macro_data(self):
         """
-        Extracción Híbrida: 
-        Cripto vía Binance (CCXT) -> 100% Real-time y sin bloqueos.
-        Macro vía Yahoo Finance -> Índices tradicionales + 30 días de historia para gráficos.
+        Extracción Unificada: 
+        Cripto y Macro vía Yahoo Finance (100% a prueba de bloqueos de servidor).
         """
         results = []
         
-        # 1. BLOQUE CRIPTO (Datos Reales de Binance)
-        try:
-            tickers = self.binance.fetch_tickers(['BTC/USDT', 'ETH/USDT', 'SOL/USDT'])
-            
-            for symbol in ['BTC/USDT', 'ETH/USDT', 'SOL/USDT']:
-                if symbol in tickers:
-                    data = tickers[symbol]
-                    current = data['last']
-                    change = data['percentage'] 
-                    
-                    name = symbol.replace("USDT", "USD")
-                    results.append({
-                        "symbol": name,
-                        "price": f"{current:,.2f}" if current < 1000 else f"{current:,.0f}",
-                        "change": f"{change:+.2f}%",
-                        "isPositive": change >= 0
-                    })
-        except Exception as e:
-            print(f"Error extrayendo Cripto de Binance: {e}")
-
-        # 2. BLOQUE MACRO (Datos Reales de Wall Street vía Yahoo con Historia)
-        tradfi_tickers = {
+        # Unificamos todo en un solo diccionario (Cripto + TradFi)
+        all_tickers = {
+            "BTC/USD": "BTC-USD",
+            "ETH/USD": "ETH-USD",
+            "SOL/USD": "SOL-USD",
             "S&P 500": "^GSPC",
             "GOLD": "GC=F",
             "DXY": "DX-Y.NYB",
             "NVDA": "NVDA"
         }
         
-        for name, sym in tradfi_tickers.items():
+        for name, sym in all_tickers.items():
             try:
                 t = yf.Ticker(sym)
-                # ¡AQUÍ ESTÁ LA MAGIA! Pedimos 30 días en lugar de 5
                 hist = t.history(period="30d") 
                 
                 if len(hist) >= 2:
@@ -163,7 +135,7 @@ class MarketDataService:
                     if prev == 0: continue
                     change = ((current / prev) - 1) * 100
                     
-                    # Formateamos el historial para TradingView en React
+                    # Formateamos el historial para TradingView / Sparklines
                     history_data = []
                     for date, row in hist.iterrows():
                         history_data.append({
@@ -176,7 +148,7 @@ class MarketDataService:
                         "price": f"{current:,.2f}" if current < 1000 else f"{current:,.0f}",
                         "change": f"{change:+.2f}%",
                         "isPositive": change >= 0,
-                        "history": history_data # Inyectamos la historia al JSON
+                        "history": history_data # Ahora las criptos también tendrán historial
                     })
             except Exception as e:
                 print(f"Error extrayendo {name} de Yahoo: {e}")
