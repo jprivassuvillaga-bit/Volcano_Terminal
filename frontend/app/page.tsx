@@ -38,9 +38,9 @@ export default function TerminalPage() {
     const fetchAllData = async () => {
       try {
         const [resRadar, resRisk, resTickers] = await Promise.all([
-          fetch('http://localhost:8000/api/v1/radar'),
-          fetch('http://localhost:8000/api/v1/risk'),
-          fetch('http://localhost:8000/api/v1/tickers')
+          fetch(process.env.NEXT_PUBLIC_API_URL + '/radar'),
+          fetch(process.env.NEXT_PUBLIC_API_URL + '/risk'),
+          fetch(process.env.NEXT_PUBLIC_API_URL + '/tickers')
         ]);
 
         const radar = resRadar.ok ? await resRadar.json() : [];
