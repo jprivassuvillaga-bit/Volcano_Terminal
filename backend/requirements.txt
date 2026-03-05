@@ -9,3 +9,4 @@ feedparser
 scipy
 statsmodels
 python-multipart
+setuptools
