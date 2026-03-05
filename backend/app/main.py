@@ -51,6 +51,8 @@ async def get_institutional_radar():
 @app.get("/api/v1/risk")
 async def get_risk_analysis(ticker: str = "BTC-USD"):
     df = market_service.get_ohlcv(ticker=ticker)
+    if isinstance(df, list):
+        df = pd.DataFrame(df)
     if df.empty:
         return {"error": "No data"}
     
