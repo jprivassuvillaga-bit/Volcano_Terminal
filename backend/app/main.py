@@ -49,25 +49,50 @@ async def get_institutional_radar():
 
 # 1. CAMBIO: De 'risk-analysis' a 'risk' para que el Frontend lo encuentre
 @app.get("/api/v1/risk")
-async def get_risk_analysis(ticker: str = "BTC-USD"):
-    df = market_service.get_ohlcv(ticker=ticker)
-    if isinstance(df, list):
-        df = pd.DataFrame(df)
-    if df.empty:
-        return {"error": "No data"}
-    
-    vol_metrics = risk_service.calculate_volatility_metrics(df['close'])
-    valuation = risk_service.get_valuation_zscore(df['close'])
-    var_sim = risk_service.run_var_simulator(
-        spot_price=df['close'].iloc[-1],
-        volatility=df['volatility'].iloc[-1]
-    )
+def get_risk_analysis(ticker: str = "BTC-USD"):
+    try:
+        # 1. Descargamos la data cruda y segura de Yahoo
+        df = yf.download(ticker, period="3mo", interval="1d")
+        
+        if df.empty:
+            return {"error": "Datos no disponibles"}
+            
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.droplevel(1)
 
-    return {
-        "ticker": ticker,
-        "price": round(df['close'].iloc[-1], 2),
-        "analysis": [vol_metrics, valuation, var_sim]
-    }
+        # 2. LAS MATEMÁTICAS (Lo que faltaba)
+        # Calculamos los retornos diarios
+        df['returns'] = df['Close'].pct_change()
+        
+        # Calculamos la Volatilidad Histórica (Rolling de 20 días anualizado)
+        df['volatility'] = df['returns'].rolling(window=20).std() * np.sqrt(365) * 100
+        
+        # Calculamos la Media Móvil de 20 días (SMA 20)
+        df['sma_20'] = df['Close'].rolling(window=20).mean()
+        
+        # Limpiamos los primeros días que no tienen suficientes datos para el cálculo
+        df = df.dropna()
+
+        # 3. Extraemos el último valor de nuestras nuevas columnas
+        current_volatility = float(df['volatility'].iloc[-1])
+        current_sma = float(df['sma_20'].iloc[-1])
+        current_price = float(df['Close'].iloc[-1])
+        
+        # Lógica de Riesgo
+        risk_status = "Alto Riesgo" if current_volatility > 60 else "Riesgo Moderado"
+        
+        # 4. Devolvemos el JSON exacto que tu frontend necesita
+        return {
+            "ticker": ticker,
+            "volatility": current_volatility, # El frontend estaba buscando esta llave exacta
+            "sma_20": current_sma,
+            "current_price": current_price,
+            "status": risk_status
+        }
+        
+    except Exception as e:
+        print(f"Error calculando riesgo: {e}")
+        return {"error": "Error interno al calcular riesgo"}
 
 # 2. CAMBIO: De 'simulate' a 'sim'
 @app.get("/api/v1/sim")
