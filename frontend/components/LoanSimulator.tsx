@@ -6,8 +6,8 @@ import { Landmark, ChevronDown, ChevronUp, ShieldAlert, ShieldCheck } from 'luci
 export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
   // 1. INPUTS DEL CLIENTE Y DEL BANCO
   const [loan, setLoan] = useState(50000);
-  const [targetLtv, setTargetLtv] = useState(50); // %
-  const [haircut, setHaircut] = useState(20); // %
+  const [targetLtv, setTargetLtv] = useState(62.5); // %
+  const [haircut, setHaircut] = useState(30); // %
   
   // 2. INPUTS DEL MODELO VaR
   const [confLevel, setConfLevel] = useState(99); // %
@@ -83,6 +83,8 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
             <label className="text-[9px] font-mono text-gray-400 uppercase">Requested Loan (USD)</label>
             <input 
               type="number" value={loan} onChange={(e) => setLoan(Number(e.target.value))}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               className="w-full bg-black/50 border border-white/5 rounded p-2 text-sm text-white focus:border-emerald-500 outline-none"
             />
           </div>
@@ -90,6 +92,8 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
             <label className="text-[9px] font-mono text-gray-400 uppercase">Target LTV (%)</label>
             <input 
               type="number" value={targetLtv} onChange={(e) => setTargetLtv(Number(e.target.value))}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               className="w-full bg-black/50 border border-white/5 rounded p-2 text-sm text-white focus:border-emerald-500 outline-none"
             />
           </div>
@@ -100,7 +104,12 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
             <label className="text-[9px] font-mono text-gray-400 uppercase">Institutional Haircut</label>
             <span className="text-[10px] text-emerald-500 font-bold">{haircut}%</span>
           </div>
-          <input type="range" min="0" max="50" step="1" value={haircut} onChange={(e) => setHaircut(Number(e.target.value))} className="w-full accent-emerald-500 h-1 bg-white/5 rounded-lg appearance-none cursor-pointer" />
+          <input 
+            type="range" min="0" max="50" step="1" value={haircut} onChange={(e) => setHaircut(Number(e.target.value))} 
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-full accent-emerald-500 h-1 bg-white/5 rounded-lg appearance-none cursor-pointer" 
+          />
         </div>
 
         {/* CONTROLES DEL VaR */}
@@ -113,7 +122,12 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[9px] font-mono text-gray-500 uppercase">Time Horizon</label>
-              <select value={varDays} onChange={(e) => setVarDays(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded p-2 text-[10px] text-white outline-none">
+              <select 
+                value={varDays} onChange={(e) => setVarDays(Number(e.target.value))} 
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className="w-full bg-black border border-white/10 rounded p-2 text-[10px] text-white outline-none"
+              >
                 <option value={7}>7 Days</option>
                 <option value={14}>14 Days</option>
                 <option value={30}>1 Month (30d)</option>
@@ -123,7 +137,12 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
             </div>
             <div className="space-y-2">
               <label className="text-[9px] font-mono text-gray-500 uppercase">Confidence Level</label>
-              <select value={confLevel} onChange={(e) => setConfLevel(Number(e.target.value))} className="w-full bg-black border border-white/10 rounded p-2 text-[10px] text-white outline-none">
+              <select 
+                value={confLevel} onChange={(e) => setConfLevel(Number(e.target.value))} 
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                className="w-full bg-black border border-white/10 rounded p-2 text-[10px] text-white outline-none"
+              >
                 <option value={95}>95% (Z=1.645)</option>
                 <option value={99}>99% (Z=2.326)</option>
                 <option value={99.9}>99.9% (Z=3.090)</option>
@@ -151,7 +170,12 @@ export default function LoanSimulator({ btcPrice }: { btcPrice: number }) {
 
         {/* DROPDOWN AUDITORÍA MATEMÁTICA */}
         <div className="pt-2">
-          <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center p-3 bg-white/[0.02] hover:bg-white/[0.05] rounded-lg transition-all">
+          <button 
+            onClick={() => setIsOpen(!isOpen)} 
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-full flex justify-between items-center p-3 bg-white/[0.02] hover:bg-white/[0.05] rounded-lg transition-all"
+          >
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Mathematical Audit Log</span>
             {isOpen ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
           </button>
