@@ -9,7 +9,7 @@ const WIDGET_OPTIONS = [
   { id: 'radar-card', name: 'Flow Radar', icon: <Satellite size={14} /> },
   { id: 'risk-card', name: 'Risk Audit', icon: <ShieldAlert size={14} /> },
   { id: 'loan-simulator', name: 'Simulator', icon: <Calculator size={14} /> },
-  { id: 'on-chain-card', name: 'On-Chain', icon: <Database size={14} /> },
+  //{ id: 'on-chain-card', name: 'On-Chain', icon: <Database size={14} /> },
   { id: 'pairs-trading', name: 'Pairs Trading', icon: <Satellite size={14} /> },
 ];
 

@@ -63,7 +63,7 @@ def get_risk_analysis(ticker: str = "BTC-USD"):
         # 1. Cálculo de Volatilidad
         df['log_returns'] = np.log(df['Close'] / df['Close'].shift(1))
         recent_30d_returns = df['log_returns'].tail(30)
-        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365))
+        realized_volatility = float(recent_30d_returns.std() * np.sqrt(365)*100)
         
         # 2. Cálculo de Medias Móviles (Corto y Medio plazo)
         df['sma_20'] = df['Close'].rolling(window=20).mean()
@@ -237,54 +237,57 @@ def get_onchain_metrics():
     
 @app.get("/api/v1/pairs-trading")
 def get_pairs_trading(target_ticker: str = "MSTR"):
-    """
-    Calcula el Arbitraje Estadístico (Z-Score y Beta) entre BTC y el activo objetivo.
-    """
     try:
-        # 1. Descargamos 1 año de datos para ambos activos simultáneamente
-        df = yf.download(["BTC-USD", target_ticker], period="1y")
+        base_ticker = "BTC-USD"
         
-        # Aplanamos el MultiIndex de Yahoo Finance si existe
+        # 1. Descargamos ambos activos al mismo tiempo para que las fechas coincidan perfecto
+        df = yf.download([base_ticker, target_ticker], period="1y", interval="1d")
+        
+        # Extraemos solo la tabla de precios de cierre
         if isinstance(df.columns, pd.MultiIndex):
-            close_data = df['Close']
+            df_close = df['Close'].dropna()
         else:
-            close_data = df
+            return {"error": "Formato de datos inesperado"}
             
-        # Limpiamos los datos
-        close_data = close_data.dropna()
+        if df_close.empty or base_ticker not in df_close.columns or target_ticker not in df_close.columns:
+            return {"error": "Datos insuficientes para el par"}
+
+        # 2. CÁLCULO DE BETA (Sensibilidad direccional)
+        returns = df_close.pct_change().dropna()
+        covariance = returns[base_ticker].cov(returns[target_ticker])
+        variance = returns[target_ticker].var()
+        beta = float(covariance / variance) if variance != 0 else 0.0
+
+        # 3. CÁLCULO DE Z-SCORE (Reversión a la media)
+        # Calculamos el ratio o spread entre ambos activos
+        ratio = df_close[base_ticker] / df_close[target_ticker]
         
-        # 2. Matemáticas de Arbitraje Estadístico (Stat Arb)
-        # Ratio de precios
-        ratio = close_data["BTC-USD"] / close_data[target_ticker]
-        
-        # Z-Score Móvil de 30 días
+        # Calculamos media y desviación estándar móvil de 30 días
         rolling_mean = ratio.rolling(window=30).mean()
         rolling_std = ratio.rolling(window=30).std()
+        
+        # Z-Score: (Valor Actual - Media) / Desviación Estándar
         z_score = (ratio - rolling_mean) / rolling_std
         
-        # Beta (Correlación de retornos)
-        ret_btc = close_data["BTC-USD"].pct_change()
-        ret_target = close_data[target_ticker].pct_change()
-        covariance = ret_btc.rolling(window=30).cov(ret_target)
-        variance = ret_target.rolling(window=30).var()
-        beta = covariance / variance
-        
-        # 3. Empaquetado
-        result_df = pd.DataFrame({'z_score': z_score, 'beta': beta}).dropna()
-        
+        # Limpiamos los primeros 30 días que dan 'NaN' por la ventana móvil
+        z_score_clean = z_score.dropna()
+
+        # 4. FORMATEO PARA EL GRÁFICO (Unix Timestamp)
         history = []
-        for date, row in result_df.iterrows():
+        for index, val in z_score_clean.items():
             history.append({
-                "time": date.strftime('%Y-%m-%d'),
-                "value": float(row['z_score'])
+                "time": int(index.timestamp()),
+                "value": float(val)
             })
-            
+
+        current_z = float(z_score_clean.iloc[-1])
+
         return {
-            "z_score": float(result_df['z_score'].iloc[-1]),
-            "beta": float(result_df['beta'].iloc[-1]),
+            "z_score": current_z,
+            "beta": beta,
             "history": history
         }
-    except Exception as e:
-        print(f"Error en Pairs Trading: {e}")
-        return None
 
+    except Exception as e:
+        print(f"Error calculando Pairs Trading: {e}")
+        return {"error": "Error interno calculando pares"}

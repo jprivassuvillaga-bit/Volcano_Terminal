@@ -11,7 +11,7 @@ export default function OnChainCard() {
   useEffect(() => {
     const fetchOnChain = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/v1/onchain', { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/onchain`, { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
           setData(json);

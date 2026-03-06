@@ -74,7 +74,7 @@ export default function PairsTradingCard() {
       setIsLoading(true);
       try {
         const ticker = TARGET_ASSETS[assetB];
-        const res = await fetch(`http://localhost:8000/api/v1/pairs-trading?target_ticker=${ticker}`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pairs-trading?target_ticker=${ticker}`, { cache: 'no-store' });
         
         if (res.ok) {
           const json = await res.json();
